@@ -5,8 +5,25 @@ import fetch from 'node-fetch'
 import fs from 'fs'
 import path from 'path'
 
+const git = simpleGit();
 const API_ENDPOINT = 'https://data.jsdelivr.com/v1/package/npm'
 const CDN_ENDPOINT = 'https://cdn.jsdelivr.net/npm'
+const DEPENDENCIES_JSON = 'dependencies.json'
+type File = {
+  remote: string
+  local: string
+}
+
+type Dependency = {
+  name: string,
+  version: string,
+  files: File[]
+}
+
+type Dependencies = {
+  localBasePath: string,
+  dependencies: Dependency[]
+}
 
 /**
  * Get the lastest package version from API
@@ -61,42 +78,63 @@ const readDependenciesInfo = (path: string): Dependencies => {
   return JSON.parse(fs.readFileSync(path, 'utf8'))
 }
 
-type File = {
-  remote: string
-  local: string
+const remoteBranchExists = async (name: string) => {
+  const branches = await git.branch(['-r'])
+  return branches.all.includes('origin/' + name)
 }
-type Dependency = {
-  name: string,
-  version: string,
-  files: [File]
-}
-type Dependencies = {
-  localBasePath: string,
-  dependencies: Dependency[]
+
+const createBranch = async (name: string) => {
+  await git.checkoutLocalBranch(name)
 }
 // load dependencies.json
-const deps = readDependenciesInfo('dependencies.json')
+const deps = readDependenciesInfo(DEPENDENCIES_JSON)
 // configure local bask path
 const LOCAL_BASE_PATH = deps.localBasePath
 
-const updatedDependencies = await Promise.all(deps.dependencies.map(async dependency => {
+for (let i = 0; i < deps.dependencies.length; i ++) {
+  const dependency = deps.dependencies[i]
   const packageName = dependency.name
   const version = dependency.version
   const files = dependency.files
   const latestVersion = await getLatestPackageVersion(packageName)
-  if (latestVersion === version) return dependency
-  files.forEach(async file => {
-    await downloadPackageFile(packageName, latestVersion, file.remote, path.join(LOCAL_BASE_PATH, file.local))
-  })
-  dependency.version = latestVersion
-  return dependency
-}))
+  if (latestVersion === version) continue
+
+  const branchName = `update-dependencies/${packageName}-${version}`
+  if (await remoteBranchExists(branchName)) continue
+
+  const fileList: string[] = [DEPENDENCIES_JSON]
+  createBranch(branchName)
+  for (const file of files) {
+    const localPath = path.join(LOCAL_BASE_PATH, file.local)
+    await downloadPackageFile(packageName, latestVersion, file.remote, localPath)
+    fileList.push(localPath)
+  }
+
+  const updatedDependencies = readDependenciesInfo(DEPENDENCIES_JSON)
+  updatedDependencies.dependencies[i] = dependency
+  saveFile('dependencies.json', JSON.stringify(deps, null, 4))
+  git.add(fileList)
+  git.commit(`chore(deps): bump ${packageName} from ${version} to ${latestVersion}`)
+  git.push('origin', branchName, ['--set-upstream'])
+}
+
+// const updatedDependencies = await Promise.all(deps.dependencies.map(async dependency => {
+//   const packageName = dependency.name
+//   const version = dependency.version
+//   const files = dependency.files
+//   const latestVersion = await getLatestPackageVersion(packageName)
+//   if (latestVersion === version) return dependency
+//   files.forEach(async file => {
+//     await downloadPackageFile(packageName, latestVersion, file.remote, path.join(LOCAL_BASE_PATH, file.local))
+//   })
+//   dependency.version = latestVersion
+//   return dependency
+// }))
 
 // save the updated dependencies to disk
-deps.dependencies = updatedDependencies
-saveFile('./dependencies.json', JSON.stringify(deps, null, 4))
+// deps.dependencies = updatedDependencies
+// saveFile('./dependencies.json', JSON.stringify(deps, null, 4))
 
-const git = simpleGit();
 
 // `who-to-greet` input defined in action metadata file
 // const nameToGreet = core.getInput('who-to-greet')
@@ -108,13 +146,3 @@ const git = simpleGit();
 // console.log(`The event payload: ${payload}`)
 // const branchName = core.getInput('branch-name')
 
-async function isRemoteBranchExist(name: string) {
-    const branches = await git.branch(['-r'])
-    return branches.all.includes(name)
-}
-
-(async () => {
-    const branches = await git.branch(["-r"]);
-    console.log(branches)
-    
-})();
