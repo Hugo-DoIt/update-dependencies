@@ -1,13 +1,13 @@
 // const core = require('@actions/core')
 // const github = require('@actions/github')
 import simpleGit from "simple-git";
-import fetch from 'node-fetch';
-import fs from 'fs';
-import path from 'path';
+import fetch from "node-fetch";
+import fs from "fs";
+import path from "path";
 const git = simpleGit();
-const API_ENDPOINT = 'https://data.jsdelivr.com/v1/package/npm';
-const CDN_ENDPOINT = 'https://cdn.jsdelivr.net/npm';
-const DEPENDENCIES_JSON = 'dependencies.json';
+const API_ENDPOINT = "https://data.jsdelivr.com/v1/package/npm";
+const CDN_ENDPOINT = "https://cdn.jsdelivr.net/npm";
+const DEPENDENCIES_JSON = "dependencies.json";
 console.log(`API_ENDPOINT: ${API_ENDPOINT}`);
 console.log(`CDN_ENDPOINT: ${CDN_ENDPOINT}`);
 console.log(`dependencies.json: ${DEPENDENCIES_JSON}`);
@@ -57,11 +57,11 @@ const downloadPackageFile = async (name, version, remotePath, localPath) => {
  * @returns an object contains the dependencies
  */
 const readDependenciesInfo = (path) => {
-    return JSON.parse(fs.readFileSync(path, 'utf8'));
+    return JSON.parse(fs.readFileSync(path, "utf8"));
 };
 const remoteBranchExists = async (name) => {
-    const branches = await git.branch(['-r']);
-    return branches.all.includes('origin/' + name);
+    const branches = await git.branch(["-r"]);
+    return branches.all.includes("origin/" + name);
 };
 const createBranch = async (name) => {
     await git.checkoutLocalBranch(name);
@@ -74,9 +74,8 @@ const LOCAL_BASE_PATH = deps.localBasePath;
 console.log(`LOCAL_BASE_PATH: ${LOCAL_BASE_PATH}`);
 // refresh git remote branches
 // git remote update origin --prune
-git.remote(['update', 'origin', '--prune']);
+git.remote(["update", "origin", "--prune"]);
 for (let i = 0; i < deps.dependencies.length; i++) {
-    await git.checkout(['main']);
     const dependency = deps.dependencies[i];
     const packageName = dependency.name;
     const version = dependency.version;
@@ -108,14 +107,16 @@ for (let i = 0; i < deps.dependencies.length; i++) {
     console.log(`All files downloaded`);
     const updatedDependencies = readDependenciesInfo(DEPENDENCIES_JSON);
     updatedDependencies.dependencies[i] = dependency;
-    saveFile('dependencies.json', JSON.stringify(deps, null, 4));
+    saveFile("dependencies.json", JSON.stringify(deps, null, 4));
     console.log(`dependencies.json saved`);
     await git.add(fileList);
     console.log(`${fileList} have been staged`);
     await git.commit(`chore(deps): bump ${packageName} from ${version} to ${latestVersion}`);
     console.log(`commit is created`);
-    await git.push('origin', branchName, ['--set-upstream']);
+    await git.push("origin", branchName, ["--set-upstream"]);
     console.log(`pushed to the origin`);
+    // git checkout main
+    await git.checkout(["main"]);
 }
 // const updatedDependencies = await Promise.all(deps.dependencies.map(async dependency => {
 //   const packageName = dependency.name
