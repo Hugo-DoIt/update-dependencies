@@ -1,0 +1,24 @@
+{
+  "name": "update-dependencies",
+  "version": "0.0.1",
+  "description": "A GitHub Action to update static dependencies",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hugo-DoIt/update-dependencies.git"
+  },
+  "author": "HEIGE-PCloud",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Hugo-DoIt/update-dependencies/issues"
+  },
+  "homepage": "https://github.com/Hugo-DoIt/update-dependencies#readme",
+  "dependencies": {
+    "@actions/core": "^1.9.1",
+    "@actions/github": "^5.0.3",
+    "simple-git": "^3.12.0"
+  }
+}
