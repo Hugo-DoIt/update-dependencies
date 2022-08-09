@@ -112,7 +112,7 @@ for (let i = 0; i < deps.dependencies.length; i ++) {
 
   console.log(`${packageName} - ${version} has a newer version ${latestVersion}`)
 
-  const branchName = `update-dependencies/${packageName}-${version}`
+  const branchName = `update-dependencies/${packageName}-${latestVersion}`
   if (await remoteBranchExists(branchName)) {
     console.log(`Remote branch origin/${branchName} exists, skipping`)
     continue
