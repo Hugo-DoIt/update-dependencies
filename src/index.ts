@@ -152,7 +152,7 @@ const main = async () => {
     const version = dependency.version;
     core.info(`${packageName} - current version ${version}`);
     const latestVersion = await getLatestPackageVersion(packageName);
-    core.info(`${packageName} - latest version ${version}`);
+    core.info(`${packageName} - latest version ${latestVersion}`);
     if (latestVersion === version) {
       core.info(`${packageName} is up to date, skipping`);
       core.endGroup();
