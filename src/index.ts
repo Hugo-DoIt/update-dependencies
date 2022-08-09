@@ -4,7 +4,7 @@ import simpleGit from "simple-git";
 import fs from "fs";
 import path from "path";
 import axios from "axios";
-import { getLatestPackageVersion } from "./npm";
+import { getLatestPackageVersion } from "./helpers";
 
 const git = simpleGit();
 const GITHUB_TOKEN = core.getInput("token");
