@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc && ncc build src/index.js --license licenses.txt",
+    "build": "ncc build src/index.ts --license licenses.txt --minify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
