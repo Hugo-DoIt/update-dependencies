@@ -73,6 +73,7 @@ console.log(`dependencies.json loaded`);
 const LOCAL_BASE_PATH = deps.localBasePath;
 console.log(`LOCAL_BASE_PATH: ${LOCAL_BASE_PATH}`);
 for (let i = 0; i < deps.dependencies.length; i++) {
+    await git.checkout(['main']);
     const dependency = deps.dependencies[i];
     const packageName = dependency.name;
     const version = dependency.version;
