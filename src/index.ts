@@ -184,3 +184,6 @@ const main = async () => {
   // console.log(`The event payload: ${payload}`)
   // const branchName = core.getInput('branch-name')
 }
+
+
+main()
