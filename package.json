@@ -2,8 +2,10 @@
   "name": "update-dependencies",
   "version": "0.0.1",
   "description": "A GitHub Action to update static dependencies",
-  "main": "index.js",
+  "type": "module",
+  "main": "dist/index.js",
   "scripts": {
+    "build": "tsc && ncc build lib/index.js --license licenses.txt",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -20,5 +22,11 @@
     "@actions/core": "^1.9.1",
     "@actions/github": "^5.0.3",
     "simple-git": "^3.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.6.5",
+    "@types/node-fetch": "^2.6.2",
+    "@vercel/ncc": "^0.34.0",
+    "typescript": "^4.7.4"
   }
 }
