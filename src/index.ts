@@ -1,9 +1,10 @@
 import * as core from "@actions/core"
 import * as github from "@actions/github";
 import simpleGit from "simple-git";
-import fetch from "node-fetch";
 import fs from "fs";
 import path from "path";
+import axios from "axios";
+import { getLatestPackageVersion } from "./npm";
 
 const git = simpleGit();
 const GITHUB_TOKEN = core.getInput("token");
@@ -34,17 +35,6 @@ type Dependencies = {
 };
 
 /**
- * Get the lastest package version from API
- * @param {string} packageName the name of the package
- * @returns the latest version of the package in a string
- */
-const getLatestPackageVersion = async (packageName: string) => {
-  const response = await fetch(API_ENDPOINT + `/${packageName}`);
-  const json = await response.json();
-  return json.tags.latest;
-};
-
-/**
  * Get a file within a package
  * @param {string} packageName the name of the package
  * @param {string} version the version of the package
@@ -56,10 +46,10 @@ const getPackageFile = async (
   version: string,
   path: string
 ) => {
-  const response = await fetch(
+  const response = await axios.get(
     CDN_ENDPOINT + `/${packageName}@${version}/${path}`
   );
-  return response.text();
+  return response.data;
 };
 
 /**
