@@ -107,7 +107,7 @@ for (let i = 0; i < deps.dependencies.length; i++) {
     console.log(`All files downloaded`);
     const updatedDependencies = readDependenciesInfo(DEPENDENCIES_JSON);
     updatedDependencies.dependencies[i] = dependency;
-    saveFile("dependencies.json", JSON.stringify(deps, null, 4));
+    saveFile("dependencies.json", JSON.stringify(updatedDependencies, null, 4));
     console.log(`dependencies.json saved`);
     await git.add(fileList);
     console.log(`${fileList} have been staged`);
