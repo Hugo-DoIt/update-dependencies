@@ -1,17 +1,22 @@
-// const core = require('@actions/core')
-// const github = require('@actions/github')
+import core from "@actions/core";
+import github from "@actions/github";
 import simpleGit from "simple-git";
 import fetch from "node-fetch";
 import fs from "fs";
 import path from "path";
 
 const git = simpleGit();
+const GITHUB_TOKEN = core.getInput("token");
+const octokit = github.getOctokit(GITHUB_TOKEN);
+
 const API_ENDPOINT = "https://data.jsdelivr.com/v1/package/npm";
 const CDN_ENDPOINT = "https://cdn.jsdelivr.net/npm";
 const DEPENDENCIES_JSON = "dependencies.json";
-console.log(`API_ENDPOINT: ${API_ENDPOINT}`);
-console.log(`CDN_ENDPOINT: ${CDN_ENDPOINT}`);
-console.log(`dependencies.json: ${DEPENDENCIES_JSON}`);
+
+core.info(`API_ENDPOINT: ${API_ENDPOINT}`);
+core.info(`CDN_ENDPOINT: ${CDN_ENDPOINT}`);
+core.info(`dependencies.json: ${DEPENDENCIES_JSON}`);
+
 type File = {
   remote: string;
   local: string;
@@ -101,51 +106,73 @@ const createBranch = async (name: string) => {
   await git.checkoutLocalBranch(name);
 };
 
+const createPR = async (
+  head: string,
+  base: string,
+  title: string,
+  body: string
+) => {
+  const repository = github.context.payload.repository;
+  if (repository === undefined) {
+    throw new Error("Undefined Repo!");
+  }
+  const owner = repository.owner.login;
+  const repo = repository.name;
+  const response = await octokit.rest.pulls.create({
+    owner,
+    repo,
+    head,
+    base,
+    title,
+    body,
+  });
+  // response.status
+};
 
 const main = async () => {
-  
   // load dependencies.json
   const deps = readDependenciesInfo(DEPENDENCIES_JSON);
-  console.log(`dependencies.json loaded`);
-  
+  core.info(`dependencies.json is loaded`);
+
   // configure local bask path
   const LOCAL_BASE_PATH = deps.localBasePath;
-  console.log(`LOCAL_BASE_PATH: ${LOCAL_BASE_PATH}`);
-  
+  core.info(`LOCAL_BASE_PATH: ${LOCAL_BASE_PATH}`);
+
   // refresh git remote branches
   // git remote update origin --prune
-  git.remote(["update", "origin", "--prune"]);
-  
+  await git.remote(["update", "origin", "--prune"]);
+
   for (let i = 0; i < deps.dependencies.length; i++) {
     const dependency = deps.dependencies[i];
     const packageName = dependency.name;
+    core.startGroup(`Processing ${packageName}`);
     const version = dependency.version;
-    console.log(`Processing ${packageName} current version ${version}`);
+    core.info(`${packageName} - current version ${version}`);
     const latestVersion = await getLatestPackageVersion(packageName);
-    console.log(`Processing ${packageName} latest version ${version}`);
+    core.info(`${packageName} - latest version ${version}`);
     if (latestVersion === version) {
-      console.log(`${packageName} is up to date, skipping`);
+      core.info(`${packageName} is up to date, skipping`);
+      core.endGroup();
       continue;
     }
-  
-    console.log(
-      `${packageName} - ${version} has a newer version ${latestVersion}`
-    );
-  
+
+    core.info(`${packageName} has a newer version ${latestVersion}`);
+
     const branchName = `update-dependencies/${packageName}-${latestVersion}`;
     if (await remoteBranchExists(branchName)) {
-      console.log(`Remote branch origin/${branchName} exists, skipping`);
+      core.info(`Remote branch origin/${branchName} exists, skipping`);
+      core.endGroup();
       continue;
     }
-  
+
     await createBranch(branchName);
-    console.log(`Branch created ${branchName}`);
+    core.info(`Branch ${branchName} is created`);
     const fileList: string[] = [DEPENDENCIES_JSON];
     const files = dependency.files;
-    console.log(`Start downloading files`);
+    core.info(`Start downloading files`);
     for (const file of files) {
       const localPath = path.join(LOCAL_BASE_PATH, file.local);
-      console.log(`Start downloading ${localPath}`);
+      core.info(`Start downloading ${localPath}`);
       await downloadPackageFile(
         packageName,
         latestVersion,
@@ -153,37 +180,39 @@ const main = async () => {
         localPath
       );
       fileList.push(localPath);
-      console.log(`Finish downloading ${localPath}`);
+      core.info(`Finish downloading ${localPath}`);
     }
-    console.log(`All files downloaded`);
-  
+    core.info(`All files downloaded`);
+
     const updatedDependencies = readDependenciesInfo(DEPENDENCIES_JSON);
     dependency.version = latestVersion;
     updatedDependencies.dependencies[i] = dependency;
     saveFile("dependencies.json", JSON.stringify(updatedDependencies, null, 4));
-    console.log(`dependencies.json saved`);
+    core.info(`dependencies.json has been saved saved`);
     await git.add(fileList);
-    console.log(`${fileList} have been staged`);
+    core.info(`${fileList} have been staged`);
     await git.commit(
       `chore(deps): bump ${packageName} from ${version} to ${latestVersion}`
     );
-    console.log(`commit is created`);
+    core.info(`commit is created`);
     await git.push("origin", branchName, ["--set-upstream"]);
-    console.log(`pushed to the origin`);
+    core.info(`pushed to the origin`);
     // git checkout main
     await git.checkout(["main"]);
+    // create pr
+    await createPR(
+      branchName,
+      "main",
+      `chore(deps): bump ${packageName} from ${version} to ${latestVersion}`,
+      "body: TODO"
+    );
+    core.info('pr is created')
+    core.endGroup();
   }
-    
-  // `who-to-greet` input defined in action metadata file
-  // const nameToGreet = core.getInput('who-to-greet')
-  // console.log(`Hello ${nameToGreet}!`)
-  // const time = (new Date).toTimeString();
-  // core.setOutput('time', time);
-  // Get the JSON webhook payload for the event that triggered the workflow
-  // const payload = JSON.stringify(github.context.payload, undefined, 2)
-  // console.log(`The event payload: ${payload}`)
-  // const branchName = core.getInput('branch-name')
+};
+
+try {
+  main();
+} catch (err: any) {
+  core.setFailed(err);
 }
-
-
-main()

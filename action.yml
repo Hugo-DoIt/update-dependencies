@@ -1,13 +1,10 @@
 name: 'Hello World'
 description: 'Greet someone and record the time'
 inputs:
-  branch-name:
-    description: 'The name of the branch'
-    required: true
-    default: 'test-branch'
-outputs:
-  time:
-    description: 'The time we greeted you'
+  token:
+    description: 'GITHUB_TOKEN or a `repo` scoped Personal Access Token (PAT)'
+    required: false
+    default: ${{ github.token }}
 runs:
   using: 'node16'
   main: 'dist/index.js'
