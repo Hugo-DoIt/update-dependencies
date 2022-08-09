@@ -9093,6 +9093,9 @@ console.log(`dependencies.json loaded`);
 // configure local bask path
 const LOCAL_BASE_PATH = deps.localBasePath;
 console.log(`LOCAL_BASE_PATH: ${LOCAL_BASE_PATH}`);
+// refresh git remote branches
+// git remote update origin --prune
+git.remote(['update', 'origin', '--prune']);
 for (let i = 0; i < deps.dependencies.length; i++) {
     await git.checkout(['main']);
     const dependency = deps.dependencies[i];
