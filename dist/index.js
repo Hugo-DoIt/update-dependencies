@@ -14783,6 +14783,9 @@ const main = async () => {
     // refresh git remote branches
     // git remote update origin --prune
     await git.remote(["update", "origin", "--prune"]);
+    // configure git user.name and user.email
+    await git.addConfig('user.email', 'noreply@github.com');
+    await git.addConfig('user.name', 'GitHub');
     for (let i = 0; i < deps.dependencies.length; i++) {
         const dependency = deps.dependencies[i];
         const packageName = dependency.name;
