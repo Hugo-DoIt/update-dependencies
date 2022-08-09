@@ -4,7 +4,7 @@
   "description": "A GitHub Action to update static dependencies",
   "main": "dist/index.js",
   "scripts": {
-    "build": "ncc build src/index.ts --license licenses.txt --minify",
+    "build": "ncc build src/index.ts --license licenses.txt",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
