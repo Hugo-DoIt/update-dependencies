@@ -2,7 +2,6 @@
   "name": "update-dependencies",
   "version": "0.0.1",
   "description": "A GitHub Action to update static dependencies",
-  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "ncc build src/index.ts --license licenses.txt --minify",
