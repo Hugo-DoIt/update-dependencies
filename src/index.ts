@@ -155,6 +155,7 @@ for (let i = 0; i < deps.dependencies.length; i++) {
   console.log(`All files downloaded`);
 
   const updatedDependencies = readDependenciesInfo(DEPENDENCIES_JSON);
+  dependency.version = latestVersion;
   updatedDependencies.dependencies[i] = dependency;
   saveFile("dependencies.json", JSON.stringify(updatedDependencies, null, 4));
   console.log(`dependencies.json saved`);
