@@ -9,6 +9,9 @@ const git = simpleGit();
 const API_ENDPOINT = 'https://data.jsdelivr.com/v1/package/npm'
 const CDN_ENDPOINT = 'https://cdn.jsdelivr.net/npm'
 const DEPENDENCIES_JSON = 'dependencies.json'
+console.log(`API_ENDPOINT: ${API_ENDPOINT}`)
+console.log(`CDN_ENDPOINT: ${CDN_ENDPOINT}`)
+console.log(`dependencies.json: ${DEPENDENCIES_JSON}`)
 type File = {
   remote: string
   local: string
@@ -86,36 +89,59 @@ const remoteBranchExists = async (name: string) => {
 const createBranch = async (name: string) => {
   await git.checkoutLocalBranch(name)
 }
+
 // load dependencies.json
 const deps = readDependenciesInfo(DEPENDENCIES_JSON)
+console.log(`dependencies.json loaded`)
+
 // configure local bask path
 const LOCAL_BASE_PATH = deps.localBasePath
+console.log(`LOCAL_BASE_PATH: ${LOCAL_BASE_PATH}`)
 
 for (let i = 0; i < deps.dependencies.length; i ++) {
   const dependency = deps.dependencies[i]
   const packageName = dependency.name
   const version = dependency.version
-  const files = dependency.files
+  console.log(`Processing ${packageName} current version ${version}`)
   const latestVersion = await getLatestPackageVersion(packageName)
-  if (latestVersion === version) continue
+  console.log(`Processing ${packageName} latest version ${version}`)
+  if (latestVersion === version) {
+    console.log(`${packageName} is up to date, skipping`)
+    continue
+  }
+
+  console.log(`${packageName} - ${version} has a newer version ${latestVersion}`)
 
   const branchName = `update-dependencies/${packageName}-${version}`
-  if (await remoteBranchExists(branchName)) continue
-
+  if (await remoteBranchExists(branchName)) {
+    console.log(`Remote branch origin/${branchName} exists, skipping`)
+    continue
+  }
+  
+  await createBranch(branchName)
+  console.log(`Branch created ${branchName}`)
   const fileList: string[] = [DEPENDENCIES_JSON]
-  createBranch(branchName)
+  const files = dependency.files
+  console.log(`Start downloading files`)
   for (const file of files) {
     const localPath = path.join(LOCAL_BASE_PATH, file.local)
+    console.log(`Start downloading ${localPath}`)
     await downloadPackageFile(packageName, latestVersion, file.remote, localPath)
     fileList.push(localPath)
+    console.log(`Finish downloading ${localPath}`)
   }
+  console.log(`All files downloaded`)
 
   const updatedDependencies = readDependenciesInfo(DEPENDENCIES_JSON)
   updatedDependencies.dependencies[i] = dependency
   saveFile('dependencies.json', JSON.stringify(deps, null, 4))
-  git.add(fileList)
-  git.commit(`chore(deps): bump ${packageName} from ${version} to ${latestVersion}`)
-  git.push('origin', branchName, ['--set-upstream'])
+  console.log(`dependencies.json saved`)
+  await git.add(fileList)
+  console.log(`${fileList} have been staged`)
+  await git.commit(`chore(deps): bump ${packageName} from ${version} to ${latestVersion}`)
+  console.log(`commit is created`)
+  await git.push('origin', branchName, ['--set-upstream'])
+  console.log(`pushed to the origin`)
 }
 
 // const updatedDependencies = await Promise.all(deps.dependencies.map(async dependency => {

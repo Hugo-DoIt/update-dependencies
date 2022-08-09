@@ -4,7 +4,7 @@
   
     "compilerOptions": {
       "lib": ["es2021"],
-      "module": "Node16",
+      "module": "ES2022",
       "target": "es2021",
   
       "strict": true,

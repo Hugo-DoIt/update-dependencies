@@ -5099,125 +5099,6 @@ module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("zlib");
 
 /***/ }),
 
-/***/ 554:
-/***/ ((__webpack_module__, __unused_webpack___webpack_exports__, __nccwpck_require__) => {
-
-__nccwpck_require__.a(__webpack_module__, async (__webpack_handle_async_dependencies__) => {
-/* harmony import */ var simple_git__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(525);
-/* harmony import */ var node_fetch__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(467);
-/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(147);
-/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(17);
-var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-// const core = require('@actions/core')
-// const github = require('@actions/github')
-
-
-
-
-const API_ENDPOINT = 'https://data.jsdelivr.com/v1/package/npm';
-const CDN_ENDPOINT = 'https://cdn.jsdelivr.net/npm';
-/**
- * Get the lastest package version from API
- * @param {string} packageName the name of the package
- * @returns the latest version of the package in a string
- */
-const getLatestPackageVersion = (packageName) => __awaiter(void 0, void 0, void 0, function* () {
-    const response = yield node_fetch__WEBPACK_IMPORTED_MODULE_1__(API_ENDPOINT + `/${packageName}`, null);
-    const json = yield response.json();
-    return json.tags.latest;
-});
-/**
- * Get a file within a package
- * @param {string} packageName the name of the package
- * @param {string} version the version of the package
- * @param {string} path the path to the file in the package
- * @returns the file as plain text
- */
-const getPackageFile = (packageName, version, path) => __awaiter(void 0, void 0, void 0, function* () {
-    const response = yield node_fetch__WEBPACK_IMPORTED_MODULE_1__(CDN_ENDPOINT + `/${packageName}@${version}/${path}`, null);
-    return response.text();
-});
-/**
- * Save plain text to disk
- * @param {string} path the path to the destination
- * @param {string} text plain text to be saved
- */
-const saveFile = (path, text) => {
-    fs__WEBPACK_IMPORTED_MODULE_2__.writeFileSync(path, text);
-};
-/**
- * Download a package file and save to the disk
- * @param {string} name the name of the package
- * @param {string} version the version of the package
- * @param {string} remotePath the remote file path
- * @param {string} localPath the local file path
- */
-const downloadPackageFile = (name, version, remotePath, localPath) => __awaiter(void 0, void 0, void 0, function* () {
-    const file = yield getPackageFile(name, version, remotePath);
-    saveFile(localPath, file);
-});
-/**
- * Read the dependencies.json from the disk
- * @param {string} path to dependencies.json
- * @returns an object contains the dependencies
- */
-const readDependenciesInfo = (path) => {
-    return JSON.parse(fs__WEBPACK_IMPORTED_MODULE_2__.readFileSync(path, 'utf8'));
-};
-// load dependencies.json
-const deps = readDependenciesInfo('dependencies.json');
-// configure local bask path
-const LOCAL_BASE_PATH = deps.localBasePath;
-const updatedDependencies = await Promise.all(deps.dependencies.map((dependency) => __awaiter(void 0, void 0, void 0, function* () {
-    const packageName = dependency.name;
-    const version = dependency.version;
-    const files = dependency.files;
-    const latestVersion = yield getLatestPackageVersion(packageName);
-    if (latestVersion === version)
-        return dependency;
-    files.forEach((file) => __awaiter(void 0, void 0, void 0, function* () {
-        yield downloadPackageFile(packageName, latestVersion, file.remote, path__WEBPACK_IMPORTED_MODULE_3__.join(LOCAL_BASE_PATH, file.local));
-    }));
-    dependency.version = latestVersion;
-    return dependency;
-})));
-// save the updated dependencies to disk
-deps.dependencies = updatedDependencies;
-saveFile('./dependencies.json', JSON.stringify(deps, null, 4));
-const git = (0,simple_git__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .ZP)();
-// `who-to-greet` input defined in action metadata file
-// const nameToGreet = core.getInput('who-to-greet')
-// console.log(`Hello ${nameToGreet}!`)
-// const time = (new Date).toTimeString();
-// core.setOutput('time', time);
-// Get the JSON webhook payload for the event that triggered the workflow
-// const payload = JSON.stringify(github.context.payload, undefined, 2)
-// console.log(`The event payload: ${payload}`)
-// const branchName = core.getInput('branch-name')
-function isRemoteBranchExist(name) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const branches = yield git.branch(['-r']);
-        return branches.all.includes(name);
-    });
-}
-(() => __awaiter(void 0, void 0, void 0, function* () {
-    const branches = yield git.branch(["-r"]);
-    console.log(branches);
-}))();
-
-__webpack_handle_async_dependencies__();
-}, 1);
-
-/***/ }),
-
 /***/ 525:
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __nccwpck_require__) => {
 
@@ -9130,6 +9011,159 @@ var esm_default = gitInstanceFactory;
 
 /***/ }),
 
+/***/ 633:
+/***/ ((__webpack_module__, __unused_webpack___webpack_exports__, __nccwpck_require__) => {
+
+__nccwpck_require__.a(__webpack_module__, async (__webpack_handle_async_dependencies__) => {
+/* harmony import */ var simple_git__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(525);
+/* harmony import */ var node_fetch__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(467);
+/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(147);
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(17);
+// const core = require('@actions/core')
+// const github = require('@actions/github')
+
+
+
+
+const git = (0,simple_git__WEBPACK_IMPORTED_MODULE_0__/* ["default"] */ .ZP)();
+const API_ENDPOINT = 'https://data.jsdelivr.com/v1/package/npm';
+const CDN_ENDPOINT = 'https://cdn.jsdelivr.net/npm';
+const DEPENDENCIES_JSON = 'dependencies.json';
+console.log(`API_ENDPOINT: ${API_ENDPOINT}`);
+console.log(`CDN_ENDPOINT: ${CDN_ENDPOINT}`);
+console.log(`dependencies.json: ${DEPENDENCIES_JSON}`);
+/**
+ * Get the lastest package version from API
+ * @param {string} packageName the name of the package
+ * @returns the latest version of the package in a string
+ */
+const getLatestPackageVersion = async (packageName) => {
+    const response = await node_fetch__WEBPACK_IMPORTED_MODULE_1__(API_ENDPOINT + `/${packageName}`);
+    const json = await response.json();
+    return json.tags.latest;
+};
+/**
+ * Get a file within a package
+ * @param {string} packageName the name of the package
+ * @param {string} version the version of the package
+ * @param {string} path the path to the file in the package
+ * @returns the file as plain text
+ */
+const getPackageFile = async (packageName, version, path) => {
+    const response = await node_fetch__WEBPACK_IMPORTED_MODULE_1__(CDN_ENDPOINT + `/${packageName}@${version}/${path}`);
+    return response.text();
+};
+/**
+ * Save plain text to disk
+ * @param {string} path the path to the destination
+ * @param {string} text plain text to be saved
+ */
+const saveFile = (path, text) => {
+    fs__WEBPACK_IMPORTED_MODULE_2__.writeFileSync(path, text);
+};
+/**
+ * Download a package file and save to the disk
+ * @param {string} name the name of the package
+ * @param {string} version the version of the package
+ * @param {string} remotePath the remote file path
+ * @param {string} localPath the local file path
+ */
+const downloadPackageFile = async (name, version, remotePath, localPath) => {
+    const file = await getPackageFile(name, version, remotePath);
+    saveFile(localPath, file);
+};
+/**
+ * Read the dependencies.json from the disk
+ * @param {string} path to dependencies.json
+ * @returns an object contains the dependencies
+ */
+const readDependenciesInfo = (path) => {
+    return JSON.parse(fs__WEBPACK_IMPORTED_MODULE_2__.readFileSync(path, 'utf8'));
+};
+const remoteBranchExists = async (name) => {
+    const branches = await git.branch(['-r']);
+    return branches.all.includes('origin/' + name);
+};
+const createBranch = async (name) => {
+    await git.checkoutLocalBranch(name);
+};
+// load dependencies.json
+const deps = readDependenciesInfo(DEPENDENCIES_JSON);
+console.log(`dependencies.json loaded`);
+// configure local bask path
+const LOCAL_BASE_PATH = deps.localBasePath;
+console.log(`LOCAL_BASE_PATH: ${LOCAL_BASE_PATH}`);
+for (let i = 0; i < deps.dependencies.length; i++) {
+    const dependency = deps.dependencies[i];
+    const packageName = dependency.name;
+    const version = dependency.version;
+    console.log(`Processing ${packageName} current version ${version}`);
+    const latestVersion = await getLatestPackageVersion(packageName);
+    console.log(`Processing ${packageName} latest version ${version}`);
+    if (latestVersion === version) {
+        console.log(`${packageName} is up to date, skipping`);
+        continue;
+    }
+    console.log(`${packageName} - ${version} has a newer version ${latestVersion}`);
+    const branchName = `update-dependencies/${packageName}-${version}`;
+    if (await remoteBranchExists(branchName)) {
+        console.log(`Remote branch origin/${branchName} exists, skipping`);
+        continue;
+    }
+    await createBranch(branchName);
+    console.log(`Branch created ${branchName}`);
+    const fileList = [DEPENDENCIES_JSON];
+    const files = dependency.files;
+    console.log(`Start downloading files`);
+    for (const file of files) {
+        const localPath = path__WEBPACK_IMPORTED_MODULE_3__.join(LOCAL_BASE_PATH, file.local);
+        console.log(`Start downloading ${localPath}`);
+        await downloadPackageFile(packageName, latestVersion, file.remote, localPath);
+        fileList.push(localPath);
+        console.log(`Finish downloading ${localPath}`);
+    }
+    console.log(`All files downloaded`);
+    const updatedDependencies = readDependenciesInfo(DEPENDENCIES_JSON);
+    updatedDependencies.dependencies[i] = dependency;
+    saveFile('dependencies.json', JSON.stringify(deps, null, 4));
+    console.log(`dependencies.json saved`);
+    await git.add(fileList);
+    console.log(`${fileList} have been staged`);
+    await git.commit(`chore(deps): bump ${packageName} from ${version} to ${latestVersion}`);
+    console.log(`commit is created`);
+    await git.push('origin', branchName, ['--set-upstream']);
+    console.log(`pushed to the origin`);
+}
+// const updatedDependencies = await Promise.all(deps.dependencies.map(async dependency => {
+//   const packageName = dependency.name
+//   const version = dependency.version
+//   const files = dependency.files
+//   const latestVersion = await getLatestPackageVersion(packageName)
+//   if (latestVersion === version) return dependency
+//   files.forEach(async file => {
+//     await downloadPackageFile(packageName, latestVersion, file.remote, path.join(LOCAL_BASE_PATH, file.local))
+//   })
+//   dependency.version = latestVersion
+//   return dependency
+// }))
+// save the updated dependencies to disk
+// deps.dependencies = updatedDependencies
+// saveFile('./dependencies.json', JSON.stringify(deps, null, 4))
+// `who-to-greet` input defined in action metadata file
+// const nameToGreet = core.getInput('who-to-greet')
+// console.log(`Hello ${nameToGreet}!`)
+// const time = (new Date).toTimeString();
+// core.setOutput('time', time);
+// Get the JSON webhook payload for the event that triggered the workflow
+// const payload = JSON.stringify(github.context.payload, undefined, 2)
+// console.log(`The event payload: ${payload}`)
+// const branchName = core.getInput('branch-name')
+
+__webpack_handle_async_dependencies__();
+}, 1);
+
+/***/ }),
+
 /***/ 20:
 /***/ ((module) => {
 
@@ -9270,6 +9304,6 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ // startup
 /******/ // Load entry module and return exports
 /******/ // This entry module used 'module' so it can't be inlined
-/******/ var __webpack_exports__ = __nccwpck_require__(554);
+/******/ var __webpack_exports__ = __nccwpck_require__(633);
 /******/ __webpack_exports__ = await __webpack_exports__;
 /******/ 
