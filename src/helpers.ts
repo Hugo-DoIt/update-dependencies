@@ -24,7 +24,7 @@ export const getLatestPackageVersion = async (packageName: string) => {
  */
 export const getPackageGitHubRepo = async (packageName: string) => {
   const response = await axios.get(`${NPM_REGISTRY}/${packageName}`)
-  const url = response.data.repository.url
+  const url = response.data.repository?.url
   if (typeof url !== 'string') return null
 
   const info = hostedGitInfo.fromUrl(url)

@@ -21203,7 +21203,7 @@ exports.getLatestPackageVersion = getLatestPackageVersion;
  */
 const getPackageGitHubRepo = async (packageName) => {
     const response = await axios_1.default.get(`${NPM_REGISTRY}/${packageName}`);
-    const url = response.data.repository.url;
+    const url = response.data.repository?.url;
     if (typeof url !== 'string')
         return null;
     const info = hosted_git_info_1.default.fromUrl(url);
@@ -21326,7 +21326,23 @@ const createPR = async (head, base, title, body) => {
         title,
         body,
     });
-    // response.status
+    const prNumber = response.data.number;
+    // Add labels
+    octokit.rest.issues.addLabels({
+        owner,
+        repo,
+        issue_number: prNumber,
+        labels: [
+            'dependencies'
+        ]
+    });
+    // Add assignees
+    octokit.rest.issues.addAssignees({
+        owner,
+        repo,
+        issue_number: prNumber,
+        assignees: [owner]
+    });
 };
 const main = async () => {
     // load dependencies.json
@@ -21388,7 +21404,7 @@ const main = async () => {
         // git checkout main
         await git.checkout(["main"]);
         // create pr
-        await createPR(branchName, "main", `chore(deps): bump ${packageName} from ${version} to ${latestVersion}`, "body: TODO");
+        await createPR(branchName, "main", `chore(deps): bump ${packageName} from ${version} to ${latestVersion}`, `Bumps [${packageName}](https://npmjs.com/package/${packageName}) from ${version} to ${latestVersion}.`);
         core.info('pr is created');
         core.endGroup();
     }

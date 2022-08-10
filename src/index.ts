@@ -116,7 +116,23 @@ const createPR = async (
     title,
     body,
   });
-  // response.status
+  const prNumber = response.data.number;
+  // Add labels
+  octokit.rest.issues.addLabels({
+    owner,
+    repo,
+    issue_number: prNumber,
+    labels: [
+      'dependencies'
+    ]
+  })
+  // Add assignees
+  octokit.rest.issues.addAssignees({
+    owner,
+    repo,
+    issue_number: prNumber,
+    assignees: [owner]
+  })
 };
 
 const main = async () => {
@@ -197,7 +213,7 @@ const main = async () => {
       branchName,
       "main",
       `chore(deps): bump ${packageName} from ${version} to ${latestVersion}`,
-      "body: TODO"
+      `Bumps [${packageName}](https://npmjs.com/package/${packageName}) from ${version} to ${latestVersion}.`
     );
     core.info('pr is created')
     core.endGroup();
