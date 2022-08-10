@@ -4,11 +4,9 @@ import simpleGit from "simple-git";
 import fs from "fs";
 import path from "path";
 import axios from "axios";
-import { getLatestPackageVersion } from "./helpers";
+import { createPR, getLatestPackageVersion } from "./helpers";
 
 const git = simpleGit();
-const GITHUB_TOKEN = core.getInput("token");
-const octokit = github.getOctokit(GITHUB_TOKEN);
 
 const API_ENDPOINT = "https://data.jsdelivr.com/v1/package/npm";
 const CDN_ENDPOINT = "https://cdn.jsdelivr.net/npm";
@@ -96,44 +94,6 @@ const createBranch = async (name: string) => {
   await git.checkoutLocalBranch(name);
 };
 
-const createPR = async (
-  head: string,
-  base: string,
-  title: string,
-  body: string
-) => {
-  const repository = github.context.payload.repository;
-  if (repository === undefined) {
-    throw new Error("Undefined Repo!");
-  }
-  const owner = repository.owner.login;
-  const repo = repository.name;
-  const response = await octokit.rest.pulls.create({
-    owner,
-    repo,
-    head,
-    base,
-    title,
-    body,
-  });
-  const prNumber = response.data.number;
-  // Add labels
-  octokit.rest.issues.addLabels({
-    owner,
-    repo,
-    issue_number: prNumber,
-    labels: [
-      'dependencies'
-    ]
-  })
-  // Add assignees
-  octokit.rest.issues.addAssignees({
-    owner,
-    repo,
-    issue_number: prNumber,
-    assignees: [owner]
-  })
-};
 
 const main = async () => {
   // load dependencies.json
@@ -225,3 +185,5 @@ try {
 } catch (err: any) {
   core.setFailed(err);
 }
+
+

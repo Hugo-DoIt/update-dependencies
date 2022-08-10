@@ -15,4 +15,7 @@ jobs:
       
       - name: test
         uses: ./
+        with:
+          reviewers: |
+            HEIGE-PCloud
 

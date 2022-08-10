@@ -5,6 +5,14 @@ inputs:
     description: 'GITHUB_TOKEN or a `repo` scoped Personal Access Token (PAT)'
     required: false
     default: ${{ github.token }}
+  labels:
+    description: 'Labels for pull requests'
+    required: false
+    default: |
+      'dependencies'
+  reviewers:
+    description: 'Reviewers for pull requests'
+    required: false
 runs:
   using: 'node16'
   main: 'dist/index.js'

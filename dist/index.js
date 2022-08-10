@@ -21175,17 +21175,47 @@ function wrappy (fn, cb) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getPackageGitHubRepo = exports.getLatestPackageVersion = void 0;
+exports.createPR = exports.getPackageGitHubRepo = exports.getLatestPackageVersion = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const github = __importStar(__nccwpck_require__(5438));
 const axios_1 = __importDefault(__nccwpck_require__(6545));
 const hosted_git_info_1 = __importDefault(__nccwpck_require__(167));
 const NPM_REGISTRY = "https://registry.npmjs.com";
 const API_ENDPOINT = "https://data.jsdelivr.com/v1/package/npm";
 const CDN_ENDPOINT = "https://cdn.jsdelivr.net/npm";
 const DEPENDENCIES_JSON = "dependencies.json";
+const getOctokit = () => {
+    const GITHUB_TOKEN = core.getInput("token");
+    const octokit = github.getOctokit(GITHUB_TOKEN);
+    return octokit;
+};
 /**
  * Get the lastest package version from API
  * @param packageName the name of the package
@@ -21204,16 +21234,56 @@ exports.getLatestPackageVersion = getLatestPackageVersion;
 const getPackageGitHubRepo = async (packageName) => {
     const response = await axios_1.default.get(`${NPM_REGISTRY}/${packageName}`);
     const url = response.data.repository?.url;
-    if (typeof url !== 'string')
+    if (typeof url !== "string")
         return null;
     const info = hosted_git_info_1.default.fromUrl(url);
     if (info === undefined || info === null)
         return null;
-    if (info.type !== 'github')
+    if (info.type !== "github")
         return null;
     return `${info.domain}/${info.user}/${info.project}`;
 };
 exports.getPackageGitHubRepo = getPackageGitHubRepo;
+/**
+ * Create a pull request and set labels and assignees
+ * @param head
+ * @param base
+ * @param title
+ * @param body
+ */
+const createPR = async (head, base, title, body) => {
+    const octokit = getOctokit();
+    const repository = github.context.payload.repository;
+    if (repository === undefined) {
+        throw new Error("Undefined Repo!");
+    }
+    const owner = repository.owner.login;
+    const repo = repository.name;
+    const response = await octokit.rest.pulls.create({
+        owner,
+        repo,
+        head,
+        base,
+        title,
+        body,
+    });
+    const prNumber = response.data.number;
+    // Add labels
+    await octokit.rest.issues.addLabels({
+        owner,
+        repo,
+        issue_number: prNumber,
+        labels: core.getMultilineInput("labels"),
+    });
+    // Request review
+    await octokit.rest.pulls.requestReviewers({
+        owner,
+        repo,
+        pull_number: prNumber,
+        reviewers: core.getMultilineInput("reviewers"),
+    });
+};
+exports.createPR = createPR;
 
 
 /***/ }),
@@ -21251,15 +21321,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
-const github = __importStar(__nccwpck_require__(5438));
 const simple_git_1 = __importDefault(__nccwpck_require__(9103));
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const axios_1 = __importDefault(__nccwpck_require__(6545));
 const helpers_1 = __nccwpck_require__(3015);
 const git = (0, simple_git_1.default)();
-const GITHUB_TOKEN = core.getInput("token");
-const octokit = github.getOctokit(GITHUB_TOKEN);
 const API_ENDPOINT = "https://data.jsdelivr.com/v1/package/npm";
 const CDN_ENDPOINT = "https://cdn.jsdelivr.net/npm";
 const DEPENDENCIES_JSON = "dependencies.json";
@@ -21310,39 +21377,6 @@ const remoteBranchExists = async (name) => {
 };
 const createBranch = async (name) => {
     await git.checkoutLocalBranch(name);
-};
-const createPR = async (head, base, title, body) => {
-    const repository = github.context.payload.repository;
-    if (repository === undefined) {
-        throw new Error("Undefined Repo!");
-    }
-    const owner = repository.owner.login;
-    const repo = repository.name;
-    const response = await octokit.rest.pulls.create({
-        owner,
-        repo,
-        head,
-        base,
-        title,
-        body,
-    });
-    const prNumber = response.data.number;
-    // Add labels
-    octokit.rest.issues.addLabels({
-        owner,
-        repo,
-        issue_number: prNumber,
-        labels: [
-            'dependencies'
-        ]
-    });
-    // Add assignees
-    octokit.rest.issues.addAssignees({
-        owner,
-        repo,
-        issue_number: prNumber,
-        assignees: [owner]
-    });
 };
 const main = async () => {
     // load dependencies.json
@@ -21404,7 +21438,7 @@ const main = async () => {
         // git checkout main
         await git.checkout(["main"]);
         // create pr
-        await createPR(branchName, "main", `chore(deps): bump ${packageName} from ${version} to ${latestVersion}`, `Bumps [${packageName}](https://npmjs.com/package/${packageName}) from ${version} to ${latestVersion}.`);
+        await (0, helpers_1.createPR)(branchName, "main", `chore(deps): bump ${packageName} from ${version} to ${latestVersion}`, `Bumps [${packageName}](https://npmjs.com/package/${packageName}) from ${version} to ${latestVersion}.`);
         core.info('pr is created');
         core.endGroup();
     }
