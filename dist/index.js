@@ -21202,11 +21202,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createPR = exports.getPackageGitHubRepo = exports.getLatestPackageVersion = void 0;
+exports.createPR = exports.getPackageGitHubRepo = exports.createBranch = exports.remoteBranchExists = exports.downloadPackageFile = exports.saveFile = exports.getLatestPackageVersion = exports.getPackageFile = exports.readDependenciesInfo = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const axios_1 = __importDefault(__nccwpck_require__(6545));
 const hosted_git_info_1 = __importDefault(__nccwpck_require__(167));
+const fs_1 = __importDefault(__nccwpck_require__(7147));
+const simple_git_1 = __importDefault(__nccwpck_require__(9103));
+const git = (0, simple_git_1.default)();
 const NPM_REGISTRY = "https://registry.npmjs.com";
 const API_ENDPOINT = "https://data.jsdelivr.com/v1/package/npm";
 const CDN_ENDPOINT = "https://cdn.jsdelivr.net/npm";
@@ -21217,6 +21220,27 @@ const getOctokit = () => {
     return octokit;
 };
 /**
+ * Read the dependencies.json from the disk
+ * @param {string} path to dependencies.json
+ * @returns an object contains the dependencies
+ */
+const readDependenciesInfo = (path) => {
+    return JSON.parse(fs_1.default.readFileSync(path, "utf8"));
+};
+exports.readDependenciesInfo = readDependenciesInfo;
+/**
+ * Get a file within a package
+ * @param {string} packageName the name of the package
+ * @param {string} version the version of the package
+ * @param {string} path the path to the file in the package
+ * @returns the file as plain text
+ */
+const getPackageFile = async (packageName, version, path) => {
+    const response = await axios_1.default.get(CDN_ENDPOINT + `/${packageName}@${version}/${path}`);
+    return response.data;
+};
+exports.getPackageFile = getPackageFile;
+/**
  * Get the lastest package version from API
  * @param packageName the name of the package
  * @returns the latest version of the package in a string
@@ -21226,6 +21250,36 @@ const getLatestPackageVersion = async (packageName) => {
     return response.data.tags.latest;
 };
 exports.getLatestPackageVersion = getLatestPackageVersion;
+/**
+ * Save plain text to disk
+ * @param {string} path the path to the destination
+ * @param {string} text plain text to be saved
+ */
+const saveFile = (path, text) => {
+    fs_1.default.writeFileSync(path, text);
+};
+exports.saveFile = saveFile;
+/**
+ * Download a package file and save to the disk
+ * @param {string} name the name of the package
+ * @param {string} version the version of the package
+ * @param {string} remotePath the remote file path
+ * @param {string} localPath the local file path
+ */
+const downloadPackageFile = async (name, version, remotePath, localPath) => {
+    const file = await (0, exports.getPackageFile)(name, version, remotePath);
+    (0, exports.saveFile)(localPath, file);
+};
+exports.downloadPackageFile = downloadPackageFile;
+const remoteBranchExists = async (name) => {
+    const branches = await git.branch(["-r"]);
+    return branches.all.includes("origin/" + name);
+};
+exports.remoteBranchExists = remoteBranchExists;
+const createBranch = async (name) => {
+    await git.checkoutLocalBranch(name);
+};
+exports.createBranch = createBranch;
 /**
  * Get the GitHub repo url of the package
  * @param packageName
@@ -21321,11 +21375,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
-const simple_git_1 = __importDefault(__nccwpck_require__(9103));
-const fs_1 = __importDefault(__nccwpck_require__(7147));
 const path_1 = __importDefault(__nccwpck_require__(1017));
-const axios_1 = __importDefault(__nccwpck_require__(6545));
 const helpers_1 = __nccwpck_require__(3015);
+const simple_git_1 = __importDefault(__nccwpck_require__(9103));
 const git = (0, simple_git_1.default)();
 const API_ENDPOINT = "https://data.jsdelivr.com/v1/package/npm";
 const CDN_ENDPOINT = "https://cdn.jsdelivr.net/npm";
@@ -21333,54 +21385,9 @@ const DEPENDENCIES_JSON = "dependencies.json";
 core.info(`API_ENDPOINT: ${API_ENDPOINT}`);
 core.info(`CDN_ENDPOINT: ${CDN_ENDPOINT}`);
 core.info(`dependencies.json: ${DEPENDENCIES_JSON}`);
-/**
- * Get a file within a package
- * @param {string} packageName the name of the package
- * @param {string} version the version of the package
- * @param {string} path the path to the file in the package
- * @returns the file as plain text
- */
-const getPackageFile = async (packageName, version, path) => {
-    const response = await axios_1.default.get(CDN_ENDPOINT + `/${packageName}@${version}/${path}`);
-    return response.data;
-};
-/**
- * Save plain text to disk
- * @param {string} path the path to the destination
- * @param {string} text plain text to be saved
- */
-const saveFile = (path, text) => {
-    fs_1.default.writeFileSync(path, text);
-};
-/**
- * Download a package file and save to the disk
- * @param {string} name the name of the package
- * @param {string} version the version of the package
- * @param {string} remotePath the remote file path
- * @param {string} localPath the local file path
- */
-const downloadPackageFile = async (name, version, remotePath, localPath) => {
-    const file = await getPackageFile(name, version, remotePath);
-    saveFile(localPath, file);
-};
-/**
- * Read the dependencies.json from the disk
- * @param {string} path to dependencies.json
- * @returns an object contains the dependencies
- */
-const readDependenciesInfo = (path) => {
-    return JSON.parse(fs_1.default.readFileSync(path, "utf8"));
-};
-const remoteBranchExists = async (name) => {
-    const branches = await git.branch(["-r"]);
-    return branches.all.includes("origin/" + name);
-};
-const createBranch = async (name) => {
-    await git.checkoutLocalBranch(name);
-};
 const main = async () => {
     // load dependencies.json
-    const deps = readDependenciesInfo(DEPENDENCIES_JSON);
+    const deps = (0, helpers_1.readDependenciesInfo)(DEPENDENCIES_JSON);
     core.info(`dependencies.json is loaded`);
     // configure local bask path
     const LOCAL_BASE_PATH = deps.localBasePath;
@@ -21389,8 +21396,8 @@ const main = async () => {
     // git remote update origin --prune
     await git.remote(["update", "origin", "--prune"]);
     // configure git user.name and user.email
-    await git.addConfig('user.email', 'noreply@github.com');
-    await git.addConfig('user.name', 'GitHub');
+    await git.addConfig("user.email", "noreply@github.com");
+    await git.addConfig("user.name", "GitHub");
     for (let i = 0; i < deps.dependencies.length; i++) {
         const dependency = deps.dependencies[i];
         const packageName = dependency.name;
@@ -21406,12 +21413,12 @@ const main = async () => {
         }
         core.info(`${packageName} has a newer version ${latestVersion}`);
         const branchName = `update-dependencies/${packageName}-${latestVersion}`;
-        if (await remoteBranchExists(branchName)) {
+        if (await (0, helpers_1.remoteBranchExists)(branchName)) {
             core.info(`Remote branch origin/${branchName} exists, skipping`);
             core.endGroup();
             continue;
         }
-        await createBranch(branchName);
+        await (0, helpers_1.createBranch)(branchName);
         core.info(`Branch ${branchName} is created`);
         const fileList = [DEPENDENCIES_JSON];
         const files = dependency.files;
@@ -21419,15 +21426,15 @@ const main = async () => {
         for (const file of files) {
             const localPath = path_1.default.join(LOCAL_BASE_PATH, file.local);
             core.info(`Start downloading ${localPath}`);
-            await downloadPackageFile(packageName, latestVersion, file.remote, localPath);
+            await (0, helpers_1.downloadPackageFile)(packageName, latestVersion, file.remote, localPath);
             fileList.push(localPath);
             core.info(`Finish downloading ${localPath}`);
         }
         core.info(`All files downloaded`);
-        const updatedDependencies = readDependenciesInfo(DEPENDENCIES_JSON);
+        const updatedDependencies = (0, helpers_1.readDependenciesInfo)(DEPENDENCIES_JSON);
         dependency.version = latestVersion;
         updatedDependencies.dependencies[i] = dependency;
-        saveFile("dependencies.json", JSON.stringify(updatedDependencies, null, 4));
+        (0, helpers_1.saveFile)("dependencies.json", JSON.stringify(updatedDependencies, null, 4));
         core.info(`dependencies.json has been saved saved`);
         await git.add(fileList);
         core.info(`${fileList} have been staged`);
@@ -21439,7 +21446,7 @@ const main = async () => {
         await git.checkout(["main"]);
         // create pr
         await (0, helpers_1.createPR)(branchName, "main", `chore(deps): bump ${packageName} from ${version} to ${latestVersion}`, `Bumps [${packageName}](https://npmjs.com/package/${packageName}) from ${version} to ${latestVersion}.`);
-        core.info('pr is created');
+        core.info("pr is created");
         core.endGroup();
     }
 };
