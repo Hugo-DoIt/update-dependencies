@@ -9,7 +9,7 @@ inputs:
     description: 'Labels for pull requests'
     required: false
     default: |
-      'dependencies'
+      dependencies
   reviewers:
     description: 'Reviewers for pull requests'
     required: false
