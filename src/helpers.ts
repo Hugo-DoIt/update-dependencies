@@ -108,6 +108,16 @@ export const getPackageGitHubRepo = async (packageName: string) => {
   return `${info.domain}/${info.user}/${info.project}`;
 };
 
+const getRepoInfo = () => {
+  const repository = github.context.payload.repository;
+  if (repository === undefined) {
+    throw new Error("Undefined Repo!");
+  }
+  const owner = repository.owner.login;
+  const repo = repository.name;
+  return { owner, repo }
+}
+
 /**
  * Create a pull request and set labels and assignees
  * @param head
@@ -122,12 +132,7 @@ export const createPR = async (
   body: string
 ) => {
   const octokit = getOctokit();
-  const repository = github.context.payload.repository;
-  if (repository === undefined) {
-    throw new Error("Undefined Repo!");
-  }
-  const owner = repository.owner.login;
-  const repo = repository.name;
+  const { owner, repo } = getRepoInfo()
   const response = await octokit.rest.pulls.create({
     owner,
     repo,
@@ -152,3 +157,16 @@ export const createPR = async (
     reviewers: core.getMultilineInput("reviewers"),
   });
 };
+
+export const closePR = async () => {
+  const octokit = getOctokit()
+  const { owner, repo } = getRepoInfo()
+
+  // TODO
+  // await octokit.rest.pulls.list({
+  //   owner,
+  //   repo,
+  //   state: 'open',
+
+  // })
+}

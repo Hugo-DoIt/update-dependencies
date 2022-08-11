@@ -59,6 +59,8 @@ const main = async () => {
       continue;
     }
 
+    // close a legacy pr if exists
+    // TODO
     await createBranch(branchName);
     core.info(`Branch ${branchName} is created`);
     const fileList: string[] = [DEPENDENCIES_JSON];

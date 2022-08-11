@@ -21202,7 +21202,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createPR = exports.getPackageGitHubRepo = exports.createBranch = exports.remoteBranchExists = exports.downloadPackageFile = exports.saveFile = exports.getLatestPackageVersion = exports.getPackageFile = exports.readDependenciesInfo = void 0;
+exports.closePR = exports.createPR = exports.getPackageGitHubRepo = exports.createBranch = exports.remoteBranchExists = exports.downloadPackageFile = exports.saveFile = exports.getLatestPackageVersion = exports.getPackageFile = exports.readDependenciesInfo = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const axios_1 = __importDefault(__nccwpck_require__(6545));
@@ -21298,6 +21298,15 @@ const getPackageGitHubRepo = async (packageName) => {
     return `${info.domain}/${info.user}/${info.project}`;
 };
 exports.getPackageGitHubRepo = getPackageGitHubRepo;
+const getRepoInfo = () => {
+    const repository = github.context.payload.repository;
+    if (repository === undefined) {
+        throw new Error("Undefined Repo!");
+    }
+    const owner = repository.owner.login;
+    const repo = repository.name;
+    return { owner, repo };
+};
 /**
  * Create a pull request and set labels and assignees
  * @param head
@@ -21307,12 +21316,7 @@ exports.getPackageGitHubRepo = getPackageGitHubRepo;
  */
 const createPR = async (head, base, title, body) => {
     const octokit = getOctokit();
-    const repository = github.context.payload.repository;
-    if (repository === undefined) {
-        throw new Error("Undefined Repo!");
-    }
-    const owner = repository.owner.login;
-    const repo = repository.name;
+    const { owner, repo } = getRepoInfo();
     const response = await octokit.rest.pulls.create({
         owner,
         repo,
@@ -21338,6 +21342,17 @@ const createPR = async (head, base, title, body) => {
     });
 };
 exports.createPR = createPR;
+const closePR = async () => {
+    const octokit = getOctokit();
+    const { owner, repo } = getRepoInfo();
+    // TODO
+    // await octokit.rest.pulls.list({
+    //   owner,
+    //   repo,
+    //   state: 'open',
+    // })
+};
+exports.closePR = closePR;
 
 
 /***/ }),
@@ -21418,6 +21433,8 @@ const main = async () => {
             core.endGroup();
             continue;
         }
+        // close a legacy pr if exists
+        // TODO
         await (0, helpers_1.createBranch)(branchName);
         core.info(`Branch ${branchName} is created`);
         const fileList = [DEPENDENCIES_JSON];
