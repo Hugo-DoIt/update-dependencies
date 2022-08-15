@@ -21298,15 +21298,6 @@ const getPackageGitHubRepo = async (packageName) => {
     return `${info.domain}/${info.user}/${info.project}`;
 };
 exports.getPackageGitHubRepo = getPackageGitHubRepo;
-const getRepoInfo = () => {
-    const repository = github.context.payload.repository;
-    if (repository === undefined) {
-        throw new Error("Undefined Repo!");
-    }
-    const owner = repository.owner.login;
-    const repo = repository.name;
-    return { owner, repo };
-};
 /**
  * Create a pull request and set labels and assignees
  * @param head
@@ -21316,7 +21307,7 @@ const getRepoInfo = () => {
  */
 const createPR = async (head, base, title, body) => {
     const octokit = getOctokit();
-    const { owner, repo } = getRepoInfo();
+    const { owner, repo } = github.context.repo;
     const response = await octokit.rest.pulls.create({
         owner,
         repo,
@@ -21344,7 +21335,7 @@ const createPR = async (head, base, title, body) => {
 exports.createPR = createPR;
 const closePR = async () => {
     const octokit = getOctokit();
-    const { owner, repo } = getRepoInfo();
+    const { owner, repo } = github.context.repo;
     // TODO
     // await octokit.rest.pulls.list({
     //   owner,

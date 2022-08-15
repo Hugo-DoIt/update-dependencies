@@ -108,13 +108,6 @@ export const getPackageGitHubRepo = async (packageName: string) => {
   return `${info.domain}/${info.user}/${info.project}`;
 };
 
-const getRepoInfo = () => {
-  const repository = github.context.repo;
-  const owner = repository.owner;
-  const repo = repository.repo;
-  return { owner, repo }
-}
-
 /**
  * Create a pull request and set labels and assignees
  * @param head
@@ -129,7 +122,7 @@ export const createPR = async (
   body: string
 ) => {
   const octokit = getOctokit();
-  const { owner, repo } = getRepoInfo()
+  const { owner, repo } = github.context.repo
   const response = await octokit.rest.pulls.create({
     owner,
     repo,
@@ -157,7 +150,7 @@ export const createPR = async (
 
 export const closePR = async () => {
   const octokit = getOctokit()
-  const { owner, repo } = getRepoInfo()
+  const { owner, repo } = github.context.repo
 
   // TODO
   // await octokit.rest.pulls.list({
