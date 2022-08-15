@@ -109,12 +109,9 @@ export const getPackageGitHubRepo = async (packageName: string) => {
 };
 
 const getRepoInfo = () => {
-  const repository = github.context.payload.repository;
-  if (repository === undefined) {
-    throw new Error("Undefined Repo!");
-  }
-  const owner = repository.owner.login;
-  const repo = repository.name;
+  const repository = github.context.repo;
+  const owner = repository.owner;
+  const repo = repository.repo;
   return { owner, repo }
 }
 
